@@ -1,4 +1,4 @@
-package com.eniessi.azureblobstorageapi.config
+package com.eniessi.azureblobstorageapi.azureBlobStorage.config
 
 import com.azure.storage.blob.BlobContainerClient
 import com.azure.storage.blob.BlobServiceClient

@@ -1,4 +1,4 @@
-package com.eniessi.azureblobstorageapi.config
+package com.eniessi.azureblobstorageapi.azureBlobStorage.config
 
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration

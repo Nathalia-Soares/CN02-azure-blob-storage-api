@@ -1,8 +1,8 @@
-package com.eniessi.azureblobstorageapi.service
+package com.eniessi.azureblobstorageapi.azureBlobStorage.config.service
 
 import com.azure.storage.blob.BlobContainerClient
 import com.azure.storage.blob.models.BlobHttpHeaders
-import com.eniessi.azureblobstorageapi.model.BlobInfo
+import com.eniessi.azureblobstorageapi.azureBlobStorage.config.model.BlobInfo
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
 import java.io.ByteArrayOutputStream
