@@ -36,3 +36,11 @@ out/
 ### VS Code ###
 .vscode/
 
+### Azure Credentials - IMPORTANTE! ###
+azure-connection-string.txt
+azure-credentials.json
+*.connectionstring
+.env
+.env.local
+application-local.properties
+application-*.properties.backup

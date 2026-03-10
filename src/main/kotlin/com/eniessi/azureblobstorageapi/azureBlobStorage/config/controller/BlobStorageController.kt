@@ -1,10 +1,12 @@
-package com.eniessi.azureblobstorageapi.controller
+package com.eniessi.azureblobstorageapi.azureBlobStorage.config.controller
 
-import com.eniessi.azureblobstorageapi.model.BlobInfo
-import com.eniessi.azureblobstorageapi.model.UploadResponse
-import com.eniessi.azureblobstorageapi.service.AzureBlobStorageService
+import com.eniessi.azureblobstorageapi.azureBlobStorage.config.model.BlobInfo
+import com.eniessi.azureblobstorageapi.azureBlobStorage.config.model.UploadResponse
+import com.eniessi.azureblobstorageapi.azureBlobStorage.config.service.AzureBlobStorageService
+import com.eniessi.azureblobstorageapi.azureTableStorage.service.AzureTableStorageService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
+import jakarta.servlet.http.HttpServletRequest
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
@@ -16,12 +18,16 @@ import org.springframework.web.multipart.MultipartFile
 @RequestMapping("/api/blobs")
 @Tag(name = "Azure Blob Storage", description = "Operações de gerenciamento de arquivos no Azure Blob Storage")
 class BlobStorageController(
-    private val azureBlobStorageService: AzureBlobStorageService
+    private val azureBlobStorageService: AzureBlobStorageService,
+    private val azureTableStorageService: AzureTableStorageService
 ) {
 
     @PostMapping("/upload", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
     @Operation(summary = "Upload de arquivo", description = "Faz upload de uma imagem para o Azure Blob Storage")
-    fun uploadFile(@RequestParam("file") file: MultipartFile): ResponseEntity<UploadResponse> {
+    fun uploadFile(
+        @RequestParam("file") file: MultipartFile,
+        request: HttpServletRequest
+    ): ResponseEntity<UploadResponse> {
         return try {
             if (file.isEmpty) {
                 return ResponseEntity.badRequest()
@@ -29,10 +35,16 @@ class BlobStorageController(
             }
 
             val url = azureBlobStorageService.uploadFile(file)
+            val fileName = file.originalFilename ?: "unknown"
+
+            val clientIp = getClientIp(request)
+
+            azureTableStorageService.logImageUpload(fileName, clientIp)
+
             val response = UploadResponse(
-                fileName = file.originalFilename ?: "unknown",
+                fileName = fileName,
                 url = url,
-                message = "Upload realizado com sucesso"
+                message = "Upload realizado com sucesso e log registrado"
             )
 
             ResponseEntity.status(HttpStatus.CREATED).body(response)
@@ -40,6 +52,20 @@ class BlobStorageController(
             ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(UploadResponse("", "", "Erro ao fazer upload: ${e.message}"))
         }
+    }
+
+    private fun getClientIp(request: HttpServletRequest): String {
+        val xForwardedFor = request.getHeader("X-Forwarded-For")
+        if (xForwardedFor != null && xForwardedFor.isNotEmpty()) {
+            return xForwardedFor.split(",")[0].trim()
+        }
+
+        val xRealIp = request.getHeader("X-Real-IP")
+        if (xRealIp != null && xRealIp.isNotEmpty()) {
+            return xRealIp
+        }
+
+        return request.remoteAddr ?: "unknown"
     }
 
     @GetMapping("/list")
@@ -62,7 +88,9 @@ class BlobStorageController(
 
             val headers = HttpHeaders()
             headers.contentType = MediaType.parseMediaType(contentType)
-            headers.setContentDispositionFormData("attachment", fileName)
+            headers.set("Content-Disposition", "attachment; filename=\"$fileName\"")
+            headers.set("Access-Control-Allow-Origin", "*")
+            headers.set("Access-Control-Expose-Headers", "Content-Disposition")
 
             ResponseEntity.ok()
                 .headers(headers)
@@ -83,7 +111,10 @@ class BlobStorageController(
 
             val headers = HttpHeaders()
             headers.contentType = MediaType.parseMediaType(contentType)
-            headers.setContentDispositionFormData("inline", fileName)
+            headers.set("Content-Disposition", "inline; filename=\"$fileName\"")
+            headers.set("Access-Control-Allow-Origin", "*")
+            headers.set("Access-Control-Expose-Headers", "Content-Disposition")
+            headers.cacheControl = "max-age=3600"
 
             ResponseEntity.ok()
                 .headers(headers)

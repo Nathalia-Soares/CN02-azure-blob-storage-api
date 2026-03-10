@@ -1,4 +1,4 @@
-package com.eniessi.azureblobstorageapi.config
+package com.eniessi.azureblobstorageapi.azureBlobStorage.config
 
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.info.Info

@@ -1,4 +1,4 @@
-package com.eniessi.azureblobstorageapi.model
+package com.eniessi.azureblobstorageapi.azureBlobStorage.config.model
 
 import java.time.OffsetDateTime
 

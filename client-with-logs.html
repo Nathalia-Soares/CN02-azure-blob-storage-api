@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azure Blob Storage + Table Storage - Cliente</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            padding: 12px 24px;
+            background: rgba(255,255,255,0.2);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+
+        .tab:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+        }
+
+        .tab.active {
+            background: white;
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .tab-content {
+            display: none;
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        input[type="file"],
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="file"]:focus,
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: transform 0.2s;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .result.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+
+        .result.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .image-card {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+
+        .image-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .image-card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .image-card h3 {
+            color: #333;
+            font-size: 16px;
+            margin-bottom: 8px;
+            word-break: break-all;
+        }
+
+        .image-card p {
+            color: #666;
+            font-size: 12px;
+            margin-bottom: 5px;
+        }
+
+        .image-card .buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .image-card .buttons button {
+            flex: 1;
+            padding: 8px;
+            font-size: 14px;
+        }
+
+        .log-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .log-table th,
+        .log-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .log-table th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: bold;
+        }
+
+        .log-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .filter-section {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .filter-section input {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .filter-section button {
+            padding: 12px 20px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #667eea;
+            font-style: italic;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-card h3 {
+            font-size: 32px;
+            margin-bottom: 5px;
+        }
+
+        .stat-card p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Azure Blob Storage + Table Storage Manager</h1>
+
+        <div class="tabs">
+            <button class="tab active" onclick="openTab('upload')">📤 Upload</button>
+            <button class="tab" onclick="openTab('list')">📋 Listar Blobs</button>
+            <button class="tab" onclick="openTab('logs')">📊 Logs de Upload</button>
+            <button class="tab" onclick="openTab('search')">🔍 Buscar Logs</button>
+        </div>
+
+        <!-- Tab Upload -->
+        <div id="upload" class="tab-content active">
+            <h2>Upload de Imagem</h2>
+            <form id="uploadForm">
+                <div class="form-group">
+                    <label for="file">Selecione uma imagem:</label>
+                    <input type="file" id="file" accept="image/*" required>
+                </div>
+                <button type="submit">Fazer Upload</button>
+            </form>
+            <div id="uploadResult" class="result"></div>
+        </div>
+
+        <!-- Tab Listar Blobs -->
+        <div id="list" class="tab-content">
+            <h2>Imagens no Blob Storage</h2>
+            <button onclick="loadBlobs()">🔄 Atualizar Lista</button>
+            <div id="blobList" class="image-grid"></div>
+        </div>
+
+        <!-- Tab Logs -->
+        <div id="logs" class="tab-content">
+            <h2>Logs de Upload</h2>
+            <div class="stats-grid" id="statsGrid"></div>
+            <button onclick="loadLogs()">🔄 Atualizar Logs</button>
+            <table class="log-table">
+                <thead>
+                    <tr>
+                        <th>Nome do Arquivo</th>
+                        <th>Data</th>
+                        <th>Horário</th>
+                        <th>Endereço IP</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="logTableBody"></tbody>
+            </table>
+        </div>
+
+        <!-- Tab Buscar Logs -->
+        <div id="search" class="tab-content">
+            <h2>Buscar Logs</h2>
+
+            <div class="form-group">
+                <label>Buscar por Nome de Arquivo:</label>
+                <div class="filter-section">
+                    <input type="text" id="searchFileName" placeholder="Ex: vicky_01.jpg">
+                    <button onclick="searchByFileName()">Buscar</button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Buscar por Data:</label>
+                <div class="filter-section">
+                    <input type="text" id="searchDate" placeholder="Ex: 10/03/2026">
+                    <button onclick="searchByDate()">Buscar</button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Buscar por IP:</label>
+                <div class="filter-section">
+                    <input type="text" id="searchIp" placeholder="Ex: 192.168.1.100">
+                    <button onclick="searchByIp()">Buscar</button>
+                </div>
+            </div>
+
+            <div id="searchResult"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:8080/api';
+
+        function openTab(tabName) {
+            const tabs = document.querySelectorAll('.tab');
+            const contents = document.querySelectorAll('.tab-content');
+
+            tabs.forEach(tab => tab.classList.remove('active'));
+            contents.forEach(content => content.classList.remove('active'));
+
+            event.target.classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+
+            if (tabName === 'list') loadBlobs();
+            if (tabName === 'logs') loadLogs();
+        }
+
+        // Upload de arquivo
+        document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const fileInput = document.getElementById('file');
+            const file = fileInput.files[0];
+            const resultDiv = document.getElementById('uploadResult');
+
+            if (!file) {
+                showResult(resultDiv, 'Por favor, selecione um arquivo', 'error');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                resultDiv.style.display = 'block';
+                resultDiv.className = 'result';
+                resultDiv.textContent = 'Fazendo upload...';
+
+                const response = await fetch(`${API_BASE_URL}/blobs/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showResult(resultDiv, `✅ ${data.message}<br>URL: ${data.url}`, 'success');
+                    fileInput.value = '';
+                } else {
+                    showResult(resultDiv, `❌ ${data.message}`, 'error');
+                }
+            } catch (error) {
+                showResult(resultDiv, `❌ Erro: ${error.message}`, 'error');
+            }
+        });
+
+        // Listar blobs
+        async function loadBlobs() {
+            const listDiv = document.getElementById('blobList');
+            listDiv.innerHTML = '<div class="loading">Carregando imagens...</div>';
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/blobs/list`);
+                const blobs = await response.json();
+
+                if (blobs.length === 0) {
+                    listDiv.innerHTML = '<p>Nenhuma imagem encontrada.</p>';
+                    return;
+                }
+
+                listDiv.innerHTML = blobs.map(blob => `
+                    <div class="image-card">
+                        <img src="${API_BASE_URL}/blobs/view/${blob.name}"
+                             alt="${blob.name}"
+                             onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2VlZSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LXNpemU9IjE4IiBmaWxsPSIjOTk5IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+SW1hZ2VtPC90ZXh0Pjwvc3ZnPg=='"
+                             loading="lazy">
+                        <h3>${blob.name}</h3>
+                        <p>Tamanho: ${formatBytes(blob.size)}</p>
+                        <p>Tipo: ${blob.contentType || 'Desconhecido'}</p>
+                        <div class="buttons">
+                            <button onclick="downloadFile('${blob.name}')">⬇️ Download</button>
+                            <button onclick="deleteFile('${blob.name}')">🗑️ Deletar</button>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                listDiv.innerHTML = `<p class="error">Erro ao carregar: ${error.message}</p>`;
+            }
+        }
+
+        // Listar logs
+        async function loadLogs() {
+            const tbody = document.getElementById('logTableBody');
+            const statsGrid = document.getElementById('statsGrid');
+            tbody.innerHTML = '<tr><td colspan="5" class="loading">Carregando logs...</td></tr>';
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/logs/list`);
+                const logs = await response.json();
+
+                if (logs.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5">Nenhum log encontrado.</td></tr>';
+                    statsGrid.innerHTML = '';
+                    return;
+                }
+
+                // Estatísticas
+                const uniqueIps = new Set(logs.map(log => log.enderecoIp)).size;
+                const today = new Date().toLocaleDateString('pt-BR');
+                const todayUploads = logs.filter(log => log.dataDeCadastro === today).length;
+
+                statsGrid.innerHTML = `
+                    <div class="stat-card">
+                        <h3>${logs.length}</h3>
+                        <p>Total de Uploads</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>${todayUploads}</h3>
+                        <p>Uploads Hoje</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>${uniqueIps}</h3>
+                        <p>IPs Únicos</p>
+                    </div>
+                `;
+
+                tbody.innerHTML = logs.map(log => `
+                    <tr>
+                        <td>${log.nomeDaFoto}</td>
+                        <td>${log.dataDeCadastro}</td>
+                        <td>${log.horarioDoCadastro}</td>
+                        <td>${log.enderecoIp}</td>
+                        <td><button onclick="deleteLog('${log.nomeDaFoto}')">🗑️ Deletar</button></td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                tbody.innerHTML = `<tr><td colspan="5" class="error">Erro ao carregar: ${error.message}</td></tr>`;
+            }
+        }
+
+        // Buscar por nome de arquivo
+        async function searchByFileName() {
+            const fileName = document.getElementById('searchFileName').value;
+            const resultDiv = document.getElementById('searchResult');
+
+            if (!fileName) {
+                alert('Digite um nome de arquivo');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/logs/file/${encodeURIComponent(fileName)}`);
+
+                if (response.ok) {
+                    const log = await response.json();
+                    displaySearchResult([log], resultDiv);
+                } else {
+                    resultDiv.innerHTML = '<p class="error">Log não encontrado.</p>';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">Erro: ${error.message}</p>`;
+            }
+        }
+
+        // Buscar por data
+        async function searchByDate() {
+            const date = document.getElementById('searchDate').value;
+            const resultDiv = document.getElementById('searchResult');
+
+            if (!date) {
+                alert('Digite uma data no formato dd/MM/yyyy');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/logs/date/${encodeURIComponent(date)}`);
+                const logs = await response.json();
+                displaySearchResult(logs, resultDiv);
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">Erro: ${error.message}</p>`;
+            }
+        }
+
+        // Buscar por IP
+        async function searchByIp() {
+            const ip = document.getElementById('searchIp').value;
+            const resultDiv = document.getElementById('searchResult');
+
+            if (!ip) {
+                alert('Digite um endereço IP');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/logs/ip/${encodeURIComponent(ip)}`);
+                const logs = await response.json();
+                displaySearchResult(logs, resultDiv);
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">Erro: ${error.message}</p>`;
+            }
+        }
+
+        function displaySearchResult(logs, container) {
+            if (logs.length === 0) {
+                container.innerHTML = '<p>Nenhum log encontrado.</p>';
+                return;
+            }
+
+            container.innerHTML = `
+                <table class="log-table">
+                    <thead>
+                        <tr>
+                            <th>Nome do Arquivo</th>
+                            <th>Data</th>
+                            <th>Horário</th>
+                            <th>Endereço IP</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${logs.map(log => `
+                            <tr>
+                                <td>${log.nomeDaFoto}</td>
+                                <td>${log.dataDeCadastro}</td>
+                                <td>${log.horarioDoCadastro}</td>
+                                <td>${log.enderecoIp}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        // Download de arquivo
+        async function downloadFile(fileName) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/blobs/download/${encodeURIComponent(fileName)}`);
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = fileName;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+            } catch (error) {
+                alert(`Erro ao fazer download: ${error.message}`);
+            }
+        }
+
+        // Deletar arquivo
+        async function deleteFile(fileName) {
+            if (!confirm(`Deseja realmente deletar ${fileName}?`)) return;
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/blobs/delete/${encodeURIComponent(fileName)}`, {
+                    method: 'DELETE'
+                });
+
+                const data = await response.json();
+                alert(data.message || data.error);
+                loadBlobs();
+            } catch (error) {
+                alert(`Erro: ${error.message}`);
+            }
+        }
+
+        // Deletar log
+        async function deleteLog(fileName) {
+            if (!confirm(`Deseja realmente deletar o log de ${fileName}?`)) return;
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/logs/delete/${encodeURIComponent(fileName)}`, {
+                    method: 'DELETE'
+                });
+
+                const data = await response.json();
+                alert(data.message || data.error);
+                loadLogs();
+            } catch (error) {
+                alert(`Erro: ${error.message}`);
+            }
+        }
+
+        function showResult(element, message, type) {
+            element.innerHTML = message;
+            element.className = `result ${type}`;
+            element.style.display = 'block';
+        }
+
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+        }
+
+
+        // Test API connection on page load
+        window.addEventListener('load', async () => {
+            try {
+                const response = await fetch(`${API_BASE_URL}/blobs/list`);
+                if (response.ok) {
+                    console.log('✅ API connection successful');
+                } else {
+                    console.error('❌ API returned error:', response.status);
+                }
+            } catch (error) {
+                console.error('❌ Cannot connect to API:', error.message);
+                alert('⚠️ Atenção: Não foi possível conectar à API. Certifique-se de que a aplicação está rodando em http://localhost:8080');
+            }
+        });
+    </script>
+</body>
+</html>
+

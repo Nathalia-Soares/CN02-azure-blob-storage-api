@@ -1,4 +1,4 @@
-package com.eniessi.azureblobstorageapi.model
+package com.eniessi.azureblobstorageapi.azureBlobStorage.config.model
 
 data class UploadResponse(
     val fileName: String,
